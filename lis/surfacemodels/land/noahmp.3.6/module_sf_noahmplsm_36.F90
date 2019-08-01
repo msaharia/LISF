@@ -646,7 +646,7 @@ contains
                    BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT :
                    SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
                    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
-                   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               &
+                   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , RIVSTO  , FLDSTO             &
 #ifdef WRF_HYDRO
                    ,SFCHEADRT                                                  & ! IN/OUT :
 #endif
@@ -878,6 +878,8 @@ contains
   REAL                                 :: LATHEAG !latent heat vap./sublimation (j/kg)
   LOGICAL                             :: FROZEN_GROUND ! used to define latent heat pathway
   LOGICAL                             :: FROZEN_CANOPY ! used to define latent heat pathway
+  REAL                        , INTENT(INOUT)    :: RIVSTO  !river storage
+  REAL                        , INTENT(INOUT)    :: FLDSTO  !flood storage
 
   ! INTENT (OUT) variables need to be assigned a value.  These normally get assigned values
   ! only if DVEG == 2.
@@ -1004,7 +1006,7 @@ contains
                  SMCWTD ,DEEPRECH,RECH                          , & !inout
                  CMC    ,ECAN   ,ETRAN  ,FWET   ,RUNSRF ,RUNSUB , & !out
                  QIN    ,QDIS   ,QSNOW  ,PONDING1       ,PONDING2,&
-                 ISURBAN,QSNBOT,FPICE,SUBSNOW                     &
+                 ISURBAN,QSNBOT,FPICE,SUBSNOW,RIVSTO,FLDSTO       &
 #ifdef WRF_HYDRO
                         ,sfcheadrt                     &
 #endif
@@ -6663,7 +6665,7 @@ END SUBROUTINE ALBEDO_UPD
                     SMCWTD ,DEEPRECH,RECH                          , & !inout
                     CMC    ,ECAN   ,ETRAN  ,FWET   ,RUNSRF ,RUNSUB , & !out
                     QIN    ,QDIS   ,QSNOW  ,PONDING1       ,PONDING2,&
-                    ISURBAN,QSNBOT,FPICE,SUBSNOW                     &
+                    ISURBAN,QSNBOT,FPICE,SUBSNOW,RIVSTO,FLDSTO       &
 #ifdef WRF_HYDRO
                         ,sfcheadrt                     &
 #endif
@@ -6746,6 +6748,8 @@ END SUBROUTINE ALBEDO_UPD
   REAL                              , INTENT(IN)   :: LATHEAG !latent heat vap./sublimation (j/kg)
   LOGICAL                           , INTENT(IN)   :: FROZEN_GROUND ! used to define latent heat pathway
   LOGICAL                           , INTENT(IN)   :: FROZEN_CANOPY ! used to define latent heat pathway
+  REAL                              , INTENT(IN)   :: RIVSTO !MNB, ADD DESC
+  REAL                              , INTENT(IN)   :: FLDSTO !MNB, ADD DESC
 
   INTEGER,                         INTENT(IN)    :: ISURBAN
 
