@@ -283,6 +283,8 @@ subroutine NoahMP36_main(n)
     real                 :: tmp_WDPOOL         !     wood pool (switch 1 or 0) depending on woody or not [-]
     real                 :: tmp_WRRAT          !     wood to non-wood ratio
     real                 :: tmp_MRP            !     microbial respiration parameter [umol co2 /kg c/ s]
+    real                 :: tmp_rivsto         !     MNB ADD LATER
+    real                 :: tmp_fldsto         !     MNB ADD LATER
     ! SY: End corresponding to read_mp_veg_parameters
     ! SY: End for enabling OPTUE
 
@@ -340,6 +342,10 @@ subroutine NoahMP36_main(n)
  
             ! prcp: precipitation Rate
             tmp_prcp       = NOAHMP36_struc(n)%noahmp36(t)%prcp   / NOAHMP36_struc(n)%forc_count
+
+            ! rivsto/fldsto: River storage and flood storage
+            tmp_rivsto = NOAHMP36_struc(n)%noahmp36(t)%rivsto
+            tmp_fldsto = NOAHMP36_struc(n)%noahmp36(t)%fldsto
  
 !            if(t.eq.13859) write(111,fmt='(i4.4,i2.2,i2.2,i2.2,i2.2,8E14.3)') &
 !                 LIS_rc%yr,LIS_rc%mo,LIS_rc%da, LIS_rc%hr, LIS_rc%mn, &
@@ -767,6 +773,8 @@ subroutine NoahMP36_main(n)
                                   tmp_chv2              , & ! out   - sensible heat exchange coefficient over vegetated fraction [-]
                                   tmp_chb2              , & ! out   - sensible heat exchange coefficient over bare-ground [-]
                                   tmp_fpice             , & ! out   - snow fraction in precipitation [-]
+                                  tmp_rivsto            , & ! out   - river storage [m] 
+                                  tmp_fldsto            , & ! out   - flood storage [m]
                                   tmp_sfcheadrt         )   ! out   - extra output for WRF-HYDRO [m]
             
             ! save state variables from local variables to global variables
