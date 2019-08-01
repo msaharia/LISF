@@ -129,6 +129,8 @@ module LIS_routingMod
        endif
 
        call routingrun(trim(LIS_rc%routingmodel)//char(0),n)
+       call lsmroutingsetsws(trim(LIS_rc%lsm)//"+"//&
+            trim(LIS_rc%routingmodel)//char(0),n)
     endif
 
   end subroutine LIS_routing_run
