@@ -54,7 +54,7 @@ subroutine noahmp_driver_36(iloc, jloc, &
                             bgap    , wgap    , chv     , chb     , emissi  ,           & ! out :
                             shg     , shc     , shb     , evg     , evb     , ghv     , & ! out :
                             ghb     , irg     , irc     , irb     , tr      , evc     , & ! out :
-                            chleaf  , chuc    , chv2    , chb2    , fpice   , sfcheadrt)  ! out 
+                            chleaf  , chuc    , chv2    , chb2    , fpice   , rivsto, fldsto, sfcheadrt)  ! out 
   
   ! use LIS_FORC_AttributesMod 
   use module_sf_noahlsm_36, only: slcats, lucats, slpcats
@@ -290,6 +290,8 @@ subroutine noahmp_driver_36(iloc, jloc, &
   real,   intent(out) :: chv2                 ! sensible heat exchange coefficient over vegetated fraction [-] 
   real,   intent(out) :: chb2                 ! sensible heat exchange coefficient over bare-ground [-] 
   real,   intent(out) :: fpice                ! snow fraction in precipitation [-] 
+  real, intent(inout) :: rivsto               ! river storage
+  real, intent(inout) :: fldsto               ! flood storage
   real,   intent(out) :: sfcheadrt            ! extra output for WRF-HYDRO [m] 
 
   ! external function
@@ -573,7 +575,7 @@ subroutine noahmp_driver_36(iloc, jloc, &
                bgap    , wgap    , chv     , chb     , emissi  ,           & ! out :
                shg     , shc     , shb     , evg     , evb     , ghv     , & ! out :
                ghb     , irg     , irc     , irb     , tr      , evc     , & ! out :
-               chleaf  , chuc    , chv2    , chb2    , fpice               &
+               chleaf  , chuc    , chv2    , chb2    , fpice   , rivsto  , fldsto            &
 #ifdef WRF_HYDRO
                ,sfcheadrt                                                  & ! in/out :
 #endif
