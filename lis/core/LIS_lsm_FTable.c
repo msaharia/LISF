@@ -299,6 +299,15 @@ struct lsmroutinggetrunoffnode
 } ;
 struct lsmroutinggetrunoffnode* lsmroutinggetrunoff_table = NULL;
 
+struct lsmroutingsetswsnode
+{
+  char *name;
+  void (*func)(int*);
+
+  struct lsmroutingsetswsnode* next;
+} ;
+struct lsmroutingsetswsnode* lsmroutingsetsws_table = NULL;
+
 struct lsm2rtmnode
 { 
   char *name;
@@ -2482,6 +2491,82 @@ void FTN(lsmroutinggetrunoff)(char *j, int *n, int len)
     }
   }
   current->func(n); 
+}
+
+//BOP
+// !ROUTINE: registerlsmroutingsetsws
+// \label{registerlsmroutingsetsws}
+//
+// !INTERFACE:
+void FTN(registerlsmroutingsetsws)(char *j, void (*func)(int*),int len)
+//
+// !DESCRIPTION:
+//  creates an entry in the registry for the routine to
+//  set the surface water storage fields from the routing
+//  model within the LSM
+//
+//  \begin{description}
+//  \item[j]
+//   name of the LSM + routing instance
+//  \end{description}
+//EOP
+{
+  struct lsmroutingsetswsnode* current;
+  struct lsmroutingsetswsnode* pnode;
+  // create node
+
+  pnode=(struct lsmroutingsetswsnode*) malloc(sizeof(struct lsmroutingsetswsnode));
+  pnode->name=(char*) malloc(len*sizeof(char));
+  strcpy(pnode->name,j);
+  pnode->func = func;
+  pnode->next = NULL;
+
+  if(lsmroutingsetsws_table == NULL){
+    lsmroutingsetsws_table = pnode;
+  }
+  else{
+    current = lsmroutingsetsws_table;
+    while(current->next!=NULL){
+      current = current->next;
+    }
+    current->next = pnode;
+  }
+
+}
+
+//BOP
+// !ROUTINE: lsmroutingsetsws
+// \label{lsmroutingsetsws}
+//
+// !INTERFACE:
+void FTN(lsmroutingsetsws)(char *j, int *n, int len)
+//
+// !DESCRIPTION:
+//  Invokes the registered routine that sets the
+//  surface water storage fields from the routing model
+//  within the LSM
+//
+//  \begin{description}
+//  \item[j]
+//   name of the LSM + routing instance
+//  \item[n]
+//   index of the nest
+//  \end{description}
+//EOP
+{
+  struct lsmroutingsetswsnode* current;
+
+  current = lsmroutingsetsws_table;
+  while(strcmp(current->name,j)!=0){
+    current = current->next;
+    if(current==NULL) {
+      printf("****************Error****************************\n");
+      printf("set sws routine for LSM + routing instance %s is not defined\n",j);
+      printf("program will seg fault.....\n");
+      printf("****************Error****************************\n");
+    }
+  }
+  current->func(n);
 }
 
 
