@@ -27,7 +27,8 @@
 !                                adaptive time step and reservoir operation. 
 ! 13 Apr 2016: Augusto Getirana, Inclusion of option for hybrid runs with a 
 !                                river flow map. 
-!
+! 05 Jun 2019: Manabendra Saharia, Inclusion of option for 2-way coupling
+!                                between LSM and HyMAP2
 ! !USES: 
 subroutine HYMAP2_routing_run(n)
 
@@ -57,7 +58,9 @@ subroutine HYMAP2_routing_run(n)
   integer, intent(in)   :: n  
   integer               :: m
   type(ESMF_Field)      :: sf_runoff_field
-  type(ESMF_Field)      :: baseflow_field  
+  type(ESMF_Field)      :: baseflow_field
+  type(ESMF_Field)      :: rivsto_field  
+  type(ESMF_Field)      :: fldsto_field
   real,   pointer       :: surface_runoff_t(:)
   real,   pointer       :: baseflow_t(:)
   real,   allocatable   :: surface_runoff(:)
@@ -104,6 +107,8 @@ subroutine HYMAP2_routing_run(n)
 
   real,   allocatable   :: ewat_lvec(:)
   real,   allocatable   :: edif_lvec(:)
+  real,   pointer       :: rivstotmp_lvec(:)
+  real,   pointer       :: fldstotmp_lvec(:)
 
   integer               :: status
   logical               :: alarmCheck
@@ -602,6 +607,52 @@ subroutine HYMAP2_routing_run(n)
 
      call LIS_grid2tile(n,tmp_nensem(:,:,1),&
           edif_lvec)
+
+     !ms (05Jun2019)
+     if (HYMAP2_routing_struc(n)%enable2waycpl==1) then
+          ! River Storage
+          call ESMF_StateGet(LIS_runoff_state(n),"River Storage",&
+             rivsto_field, rc=status)
+          call LIS_verify(status, "HYMAP2_routing_run: ESMF_StateGet failed for River Storage")
+
+          call ESMF_FieldGet(rivsto_field,localDE=0,farrayPtr=rivstotmp_lvec,&
+               rc=status)
+          call LIS_verify(status)
+
+          HYMAP2_routing_struc(n)%rivstotmp=HYMAP2_routing_struc(n)%rivsto
+
+          call HYMAP2_vector2grid(LIS_rc%lnc(n),LIS_rc%lnr(n),1,&
+               HYMAP2_routing_struc(n)%nseqall,&
+               HYMAP2_routing_struc(n)%imis,HYMAP2_routing_struc(n)%seqx,&
+               HYMAP2_routing_struc(n)%seqy,tmp_nensem(:,:,1),&
+               HYMAP2_routing_struc(n)%rivstotmp)
+
+          call LIS_grid2tile(n,tmp_nensem(:,:,1),&
+               rivstotmp_lvec)
+          !write(LIS_logunit,*) 'rivsto from Routing', rivstotmp_lvec
+
+          ! Flood Storage
+          call ESMF_StateGet(LIS_runoff_state(n),"Flood Storage",&
+             fldsto_field, rc=status)
+          call LIS_verify(status, "HYMAP2_routing_run: ESMF_StateGet failed for Flood Storage")
+
+          call ESMF_FieldGet(fldsto_field,localDE=0,farrayPtr=fldstotmp_lvec,&
+               rc=status)
+          call LIS_verify(status)
+
+          HYMAP2_routing_struc(n)%fldstotmp=HYMAP2_routing_struc(n)%fldsto!rivsto+HYMAP2_routing_struc(n)%fldsto
+
+          call HYMAP2_vector2grid(LIS_rc%lnc(n),LIS_rc%lnr(n),1,&
+               HYMAP2_routing_struc(n)%nseqall,&
+               HYMAP2_routing_struc(n)%imis,HYMAP2_routing_struc(n)%seqx,&
+               HYMAP2_routing_struc(n)%seqy,tmp_nensem(:,:,1),&
+               HYMAP2_routing_struc(n)%fldstotmp)
+
+          call LIS_grid2tile(n,tmp_nensem(:,:,1),&
+               fldstotmp_lvec)
+          !write(LIS_logunit,*) 'fldsto from Routing', fldstotmp_lvec
+
+     endif
 
      deallocate(tmp_nensem)
 
