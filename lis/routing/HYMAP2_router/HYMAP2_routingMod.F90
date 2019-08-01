@@ -31,7 +31,8 @@ module HYMAP2_routingMod
 !                                adaptive time step and reservoir operation. 
 ! 13 Apr 2016: Augusto Getirana, Inclusion of option for hybrid runs with a 
 !                                river flow map. 
-! 
+! 05 Jun 2019: Manabendra Saharia, Inclusion of option for 2-way coupling
+!                                between LSM and HyMAP2
 ! !USES: 
   use ESMF
   use LIS_topoMod
@@ -134,6 +135,8 @@ module HYMAP2_routingMod
   !ag (03May2017)
   real,   allocatable  :: ewat(:,:)     !potential evaporation from open waters [km m-2 s-1]
   real,   allocatable  :: edif(:,:)     !differential evapotranspiration (evaporation from open waters - total evapotranspiration) used as input in HyMAP [km m-2 s-1]
+  real,   allocatable  :: rivstotmp(:,:)     !River Storage [m3]
+  real,   allocatable  :: fldstotmp(:,:)     !Flood Storage [m3]
   !integer              :: pevap_comp_method !Potential evaporation from open water internal computation method
   !character*200        :: pevap_source      !Potential evaporation readin source directory
   
@@ -175,6 +178,9 @@ module HYMAP2_routingMod
   integer              :: floodflag
   character*100        :: HYMAP_dfile      
 
+! === 2-way coupling variables/parameters ===
+  integer              :: enable2waycpl
+
   end type HYMAP2_routing_dec
 
   type(HYMAP2_routing_dec), allocatable :: HYMAP2_routing_struc(:)
@@ -211,6 +217,11 @@ contains
     real, pointer        :: sfrunoff(:)
     real, pointer        :: baseflow(:)
     real, pointer        :: evapotranspiration(:)
+    !ms (01Aug2019)
+    type(ESMF_Field)     :: rivsto_field
+    type(ESMF_Field)     :: fldsto_field
+    real, pointer        :: rivstotmp(:)
+    real, pointer        :: fldstotmp(:)
     !real, pointer        :: potevap(:)
     character*100        :: ctitle
     integer              :: iseq,ix,iy,jx,jy
@@ -256,6 +267,21 @@ contains
        HYMAP2_routing_struc(n)%numout   = 0 
        HYMAP2_routing_struc(n)%fileopen = 0 
        HYMAP2_routing_struc(n)%dt_proc  = 0.
+    enddo
+
+    !ms (01Aug12019)
+    call ESMF_ConfigFindLabel(LIS_config,&
+         "HYMAP2 routing model enable 2-way coupling:",rc=status)
+    do n=1, LIS_rc%nnest
+       call ESMF_ConfigGetAttribute(LIS_config,HYMAP2_routing_struc(n)%enable2waycpl,rc=status)
+       call LIS_verify(status,&
+            "HYMAP2 routing model enable 2-way coupling: not defined")
+
+       if (HYMAP2_routing_struc(n)%enable2waycpl==1) then
+            write(LIS_logunit,*) '[INFO] HYMAP2 routing model 2-way coupling: activated'
+       else
+            write(LIS_logunit,*) '[INFO] HYMAP2 routing model 2-way coupling: deactivated'
+       endif
     enddo
        
     call ESMF_ConfigFindLabel(LIS_config,&
@@ -618,6 +644,11 @@ contains
                1))
           allocate(HYMAP2_routing_struc(n)%edif(HYMAP2_routing_struc(n)%nseqall,&
                1))
+          !ms (22Jul2019)
+          allocate(HYMAP2_routing_struc(n)%rivstotmp(HYMAP2_routing_struc(n)%nseqall,&
+               1))
+          allocate(HYMAP2_routing_struc(n)%fldstotmp(HYMAP2_routing_struc(n)%nseqall,&
+               1))
        else
           allocate(HYMAP2_routing_struc(n)%rivsto(HYMAP2_routing_struc(n)%nseqall,&
                LIS_rc%nensem(n)))
@@ -674,6 +705,13 @@ contains
                LIS_rc%nensem(n)))
           allocate(HYMAP2_routing_struc(n)%edif(HYMAP2_routing_struc(n)%nseqall,&
                LIS_rc%nensem(n)))
+
+          !ms (22Jul2019)
+          allocate(HYMAP2_routing_struc(n)%rivstotmp(HYMAP2_routing_struc(n)%nseqall,&
+               LIS_rc%nensem(n)))
+          allocate(HYMAP2_routing_struc(n)%fldstotmp(HYMAP2_routing_struc(n)%nseqall,&
+               LIS_rc%nensem(n)))
+
        endif
 
        HYMAP2_routing_struc(n)%seqx=0.0
@@ -735,6 +773,10 @@ contains
        HYMAP2_routing_struc(n)%fldout_pre=0.0
        HYMAP2_routing_struc(n)%flddph_pre=0.0
        HYMAP2_routing_struc(n)%fldelv1=0.0
+
+       !ms(01Aug2019)
+       HYMAP2_routing_struc(n)%fldstotmp=0.0
+       HYMAP2_routing_struc(n)%rivstotmp=0.0
        
        !ag (4Feb2016)
        if(HYMAP2_routing_struc(n)%resopflag==1)then
@@ -1161,6 +1203,47 @@ contains
 
        call ESMF_stateAdd(LIS_runoff_state(n),(/baseflow_field/),rc=status)
        call LIS_verify(status, 'ESMF_StateAdd failed for base flow')
+
+       !ms (22Jul2019)
+       call ESMF_AttributeSet(LIS_runoff_state(n),"2 way coupling",&
+            0, rc=status)
+       call LIS_verify(status)
+
+       if (HYMAP2_routing_struc(n)%enable2waycpl==1) then
+           ! River Storage
+           rivsto_field =ESMF_FieldCreate(arrayspec=realarrspec,&
+                grid=LIS_vecTile(n), name="River Storage",rc=status)
+           call LIS_verify(status, 'ESMF_FieldCreate failed')
+
+           call ESMF_FieldGet(rivsto_field,localDE=0,farrayPtr=rivstotmp,&
+                rc=status)
+           call LIS_verify(status)
+           rivstotmp = 0.0
+
+           call ESMF_AttributeSet(LIS_runoff_state(n),"2 way coupling",&
+                HYMAP2_routing_struc(n)%enable2waycpl, rc=status)
+           call LIS_verify(status)
+
+           call ESMF_stateAdd(LIS_runoff_state(n),(/rivsto_field/),rc=status)
+           call LIS_verify(status, 'ESMF_StateAdd failed for River Storage')
+
+           ! Flood Storage
+           fldsto_field =ESMF_FieldCreate(arrayspec=realarrspec,&
+                grid=LIS_vecTile(n), name="Flood Storage",rc=status)
+           call LIS_verify(status, 'ESMF_FieldCreate failed')
+
+           call ESMF_FieldGet(fldsto_field,localDE=0,farrayPtr=fldstotmp,&
+                rc=status)
+           call LIS_verify(status)
+           fldstotmp = 0.0
+
+           call ESMF_AttributeSet(LIS_runoff_state(n),"2 way coupling",&
+                HYMAP2_routing_struc(n)%enable2waycpl, rc=status)
+           call LIS_verify(status)
+
+           call ESMF_stateAdd(LIS_runoff_state(n),(/fldsto_field/),rc=status)
+           call LIS_verify(status, 'ESMF_StateAdd failed for Flood Storage')
+       endif
 
        !hkb (4Mar2016)
        !create LSM interface objects to store evapotranspiration and 
