@@ -150,6 +150,28 @@ contains
   end subroutine HYMAP2_no_reservoir_lis
   ! ================================================  
   ! ================================================  
+  subroutine HYMAP2_calc_runoff1(dt,fldfrc,runoff,rivsto,fldsto)
+    ! ================================================
+    ! to   calculate runoff to storage
+    ! by   Manabendra Saharia after Augusto Getirana
+    ! on   01 Aug 2019
+    ! ================================================
+    implicit none
+    real,    intent(in)  ::  dt
+    real,    intent(in)  ::  fldfrc !area fraction
+    real,    intent(in)  ::  runoff !runoff of the grid [m3/s]
+    real,    intent(out) ::  rivsto !river storage [m3]
+    real,    intent(out) ::  fldsto !floodplain storage [m3]
+    real                 ::  rrivrof,rfldrof
+
+    rrivrof=runoff*(1.-fldfrc)*dt
+    rfldrof=runoff*fldfrc*dt
+    rivsto=rrivrof 
+    fldsto=rfldrof
+
+  end subroutine HYMAP2_calc_runoff1
+  ! ================================================
+  ! ================================================
   subroutine HYMAP2_calc_runoff(dt,fldfrc,runoff,rivsto,fldsto)
     ! ================================================
     ! to   calculate runoff to stolage
