@@ -619,7 +619,13 @@ subroutine HYMAP2_routing_run(n)
                rc=status)
           call LIS_verify(status)
 
-          HYMAP2_routing_struc(n)%rivstotmp=HYMAP2_routing_struc(n)%rivsto
+          ! convert from m3 to mm  
+          do i=1,HYMAP2_routing_struc(n)%nseqall
+               HYMAP2_routing_struc(n)%rivstotmp(i,:)=1000*HYMAP2_routing_struc(n)%rivsto(i,:)/&
+               HYMAP2_routing_struc(n)%grarea(i)
+          enddo
+
+          !HYMAP2_routing_struc(n)%rivstotmp=HYMAP2_routing_struc(n)%rivsto
 
           call HYMAP2_vector2grid(LIS_rc%lnc(n),LIS_rc%lnr(n),1,&
                HYMAP2_routing_struc(n)%nseqall,&
@@ -639,8 +645,14 @@ subroutine HYMAP2_routing_run(n)
           call ESMF_FieldGet(fldsto_field,localDE=0,farrayPtr=fldstotmp_lvec,&
                rc=status)
           call LIS_verify(status)
+ 
+          ! convert from m3 to mm  
+          do i=1,HYMAP2_routing_struc(n)%nseqall
+          HYMAP2_routing_struc(n)%fldstotmp(i,:)=1000*HYMAP2_routing_struc(n)%fldsto(i,:)/&
+               HYMAP2_routing_struc(n)%grarea(i)
+          enddo
 
-          HYMAP2_routing_struc(n)%fldstotmp=HYMAP2_routing_struc(n)%fldsto!rivsto+HYMAP2_routing_struc(n)%fldsto
+          !HYMAP2_routing_struc(n)%fldstotmp=HYMAP2_routing_struc(n)%fldsto
 
           call HYMAP2_vector2grid(LIS_rc%lnc(n),LIS_rc%lnr(n),1,&
                HYMAP2_routing_struc(n)%nseqall,&
