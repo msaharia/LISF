@@ -121,7 +121,7 @@ subroutine HYMAP2_routing_run(n)
   real,pointer       :: tmp(:),q2(:),uwind(:),vwind(:),swd(:),lwd(:)
   real,pointer       :: psurf(:)
 
-  integer            :: ix, iy, ix1, iy1
+  integer            :: i, ix, iy, ix1, iy1
 !TBD:SVK - need to redo the code to work with ntiles rather than npatches. 
 !
   alarmCheck = LIS_isAlarmRinging(LIS_rc, "HYMAP2 router model alarm")
