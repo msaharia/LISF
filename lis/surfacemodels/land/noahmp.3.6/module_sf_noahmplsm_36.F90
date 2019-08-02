@@ -8,6 +8,7 @@
 #include "LIS_misc.h"
 #define WRF_HYDRO 0
 module noahmp_globals_36
+use ESMF
 
   ! Maybe most of these can be moved to a REDPRM use statement?
   use module_sf_noahlsm_36, only: &
@@ -6846,6 +6847,9 @@ END SUBROUTINE ALBEDO_UPD
 #ifdef WRF_HYDRO
        QINSUR = QINSUR+sfcheadrt/DT*0.001  !sfcheadrt units (m)
 #endif
+
+! adding river storage and flood storage
+QINSUR = QINSUR + RIVSTO + FLDSTO
 
 ! lake/soil water balances
 
