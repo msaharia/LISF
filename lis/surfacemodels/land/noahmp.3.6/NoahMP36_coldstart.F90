@@ -68,6 +68,8 @@ subroutine NoahMP36_coldstart(mtype)
         if (trim(LIS_rc%startcode) .eq. "coldstart") then
             write(LIS_logunit,*) "MSG: NoahMP36_coldstart -- cold-starting NoahMP36"
             do t=1, LIS_rc%npatch(n,mtype)
+                NOAHMP36_struc(n)%noahmp36(t)%rivsto = 0.0
+                NOAHMP36_struc(n)%noahmp36(t)%fldsto = 0.0
                 NOAHMP36_struc(n)%noahmp36(t)%albold = NOAHMP36_struc(n)%init_albold
                 NOAHMP36_struc(n)%noahmp36(t)%sneqvo = NOAHMP36_struc(n)%init_sneqvo
                 ! only soil temperature is intialized, snow temperature is calculated by snow_init 
