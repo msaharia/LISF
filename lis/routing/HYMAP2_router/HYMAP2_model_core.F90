@@ -173,12 +173,22 @@ subroutine HYMAP2_model_core(n,mis,nseqall,nz,time,dt,  &
  do ic=1,nseqall 
     if(outlet(ic)==mis)cycle
     if(linres==1)then
-       call HYMAP2_linear_reservoir_lis(dt,mis,runoff1(ic),basflw1(ic),&
-            trnoff(ic),tbsflw(ic),cntime(ic),roffsto(ic),&
-            basfsto(ic),runoff(ic))
+       if (HYMAP2_routing_struc(n)%enable2waycpl==1) then
+            call HYMAP2_no_reservoir_lis(dt,mis,runoff1(ic),basflw1(ic),&
+                 roffsto(ic),basfsto(ic),runoff(ic))
+       else 
+            call HYMAP2_linear_reservoir_lis(dt,mis,runoff1(ic),basflw1(ic),&
+                 trnoff(ic),tbsflw(ic),cntime(ic),roffsto(ic),&
+                 basfsto(ic),runoff(ic))
+       endif
     elseif(linres==0)then
-       call HYMAP2_no_reservoir_lis(dt,mis,runoff1(ic),basflw1(ic),&
-            roffsto(ic),basfsto(ic),runoff(ic))      
+       if (HYMAP2_routing_struc(n)%enable2waycpl==1) then
+            call HYMAP2_no_reservoir_lis(dt,mis,runoff1(ic),basflw1(ic),&
+                 roffsto(ic),basfsto(ic),runoff(ic))
+       else
+            call HYMAP2_no_reservoir_lis(dt,mis,runoff1(ic),basflw1(ic),&
+                 roffsto(ic),basfsto(ic),runoff(ic))      
+       endif
     else
        write(LIS_logunit,*)"HYMAP routing model linear reservoir flag: unknown value"
        call LIS_endrun()
@@ -398,7 +408,8 @@ subroutine HYMAP2_model_core(n,mis,nseqall,nz,time,dt,  &
 ! Calculate runoff in the river network for the current time step
   do ic=1,nseqall 
      if(outlet(ic)==mis)cycle
-     call HYMAP2_calc_runoff(dt,fldfrc(ic),runoff(ic),rivsto(ic),fldsto(ic))
+     !call HYMAP2_calc_runoff(dt,fldfrc(ic),runoff(ic),rivsto(ic),fldsto(ic))
+     call HYMAP2_calc_runoff1(dt,fldfrc(ic),runoff(ic),rivsto(ic),fldsto(ic))
   enddo
 
   ! ================================================
