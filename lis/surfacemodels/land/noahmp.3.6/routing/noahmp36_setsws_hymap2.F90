@@ -46,7 +46,7 @@ subroutine noahmp36_setsws_hymap2(n)
        enable2waycpl, rc=status)
   call LIS_verify(status)
 
-  if(enable2waycpl) then 
+  if(enable2waycpl==1) then 
      ! River Storage
      call ESMF_StateGet(LIS_runoff_state(n),"River Storage",&
           rivsto_field,rc=status)
@@ -55,7 +55,7 @@ subroutine noahmp36_setsws_hymap2(n)
      call ESMF_FieldGet(rivsto_field,localDE=0,farrayPtr=rivstotmp,rc=status)
      call LIS_verify(status,'ESMF_FieldGet failed for River Storage')
 
-     !write(LIS_logunit,*) 'rivsto in LIS core', rivstotmp(:)
+     write(LIS_logunit,*) 'rivsto in LIS core', rivstotmp(:)
 
      ! Flood Storage
      call ESMF_StateGet(LIS_runoff_state(n),"Flood Storage",&
@@ -65,7 +65,7 @@ subroutine noahmp36_setsws_hymap2(n)
      call ESMF_FieldGet(fldsto_field,localDE=0,farrayPtr=fldstotmp,rc=status)
      call LIS_verify(status,'ESMF_FieldGet failed for Flood Storage')
 
-     !write(LIS_logunit,*) 'fldsto in LIS core', fldstotmp(:)
+     write(LIS_logunit,*) 'fldsto in LIS core', fldstotmp(:)
 
   endif  
 
